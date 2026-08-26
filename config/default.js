@@ -28,6 +28,11 @@ const config = {
     timeoutSeconds: parseInt(process.env.TWITCH_TIMEOUT_SECONDS || '300', 10),
   },
 
+  // Kick settings
+  kick: {
+    username: process.env.KICK_USERNAME || '',
+  },
+
   // Bot behavior
   bot: {
     sendWarningMessage: process.env.SEND_WARNING_MESSAGE === 'true',
@@ -79,6 +84,10 @@ export function validateConfig(platform = 'both') {
     if (!config.twitch.botUsername) errors.push('TWITCH_BOT_USERNAME es requerido');
     if (!config.twitch.oauthToken) errors.push('TWITCH_OAUTH_TOKEN es requerido');
     if (!config.twitch.channel) errors.push('TWITCH_CHANNEL es requerido');
+  }
+
+  if (platform === 'kick' || platform === 'all') {
+    if (!config.kick.username) errors.push('KICK_USERNAME es requerido');
   }
 
   if (config.detection.useAI && !config.detection.openaiKey) {

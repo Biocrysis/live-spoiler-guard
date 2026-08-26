@@ -4,6 +4,7 @@ import config, { validateConfig } from '../config/default.js';
 import YouTubeLiveBot from './bots/youtube-live.js';
 import TikTokLiveBot from './bots/tiktok-live.js';
 import TwitchLiveBot from './bots/twitch-live.js';
+import KickLiveBot from './bots/kick-live.js';
 import logger from './utils/logger.js';
 
 /**
@@ -16,6 +17,7 @@ class AntiSpoilerOrchestrator {
     this.youtubeBot = null;
     this.tiktokBot = null;
     this.twitchBot = null;
+    this.kickBot = null;
     this.rl = null;
     this.platform = null;
   }
@@ -47,9 +49,10 @@ Selecciona una opción:
   ${chalk.magenta('2)')} TikTok Live      - Monitoreo + alertas (solo lectura)
   ${chalk.yellow('3)')} Ambas (YT+TT)    - Ejecutar YouTube + TikTok simultáneamente
   ${chalk.hex('#9146FF')('4)')} Twitch Live      - Moderación completa (eliminar + timeout)
-  ${chalk.cyan('5)')} Todas            - Ejecutar todas las plataformas
-  ${chalk.green('6)')} Test detector    - Probar el detector con un mensaje
-  ${chalk.blue('7)')} Exportar filtros - Generar lista para filtros nativos de TikTok
+  ${chalk.green('5)')} Kick Live        - Monitoreo + alertas (solo lectura)
+  ${chalk.cyan('6)')} Todas            - Ejecutar todas las plataformas
+  ${chalk.white('7)')} Test detector    - Probar el detector con un mensaje
+  ${chalk.blue('8)')} Exportar filtros - Generar lista para filtros nativos
   ${chalk.gray('0)')} Salir
     `));
   }
@@ -68,6 +71,8 @@ Selecciona una opción:
       return this.startTikTok();
     } else if (args.includes('--twitch')) {
       return this.startTwitch();
+    } else if (args.includes('--kick')) {
+      return this.startKick();
     } else if (args.includes('--both')) {
       return this.startBoth();
     } else if (args.includes('--all')) {
@@ -96,12 +101,15 @@ Selecciona una opción:
           await this.startTwitch();
           break;
         case '5':
-          await this.startAll();
+          await this.startKick();
           break;
         case '6':
-          await this.testDetector();
+          await this.startAll();
           break;
         case '7':
+          await this.testDetector();
+          break;
+        case '8':
           this.exportFilters();
           break;
         case '0':
@@ -203,6 +211,24 @@ Selecciona una opción:
   }
 
   /**
+   * Inicia solo el bot de Kick
+   */
+  async startKick() {
+    validateConfig('kick');
+    console.log(chalk.green('\n🟢 Iniciando Kick Live Bot...\n'));
+
+    this.kickBot = new KickLiveBot();
+
+    try {
+      await this.kickBot.start();
+      this.startCommandListener();
+    } catch (error) {
+      logger.error(`No se pudo iniciar Kick bot: ${error.message}`);
+      this.exit(1);
+    }
+  }
+
+  /**
    * Inicia todas las plataformas simultáneamente
    */
   async startAll() {
@@ -211,24 +237,27 @@ Selecciona una opción:
     this.youtubeBot = new YouTubeLiveBot();
     this.tiktokBot = new TikTokLiveBot();
     this.twitchBot = new TwitchLiveBot();
+    this.kickBot = new KickLiveBot();
 
     const results = await Promise.allSettled([
       this.youtubeBot.start(),
       this.tiktokBot.start(),
       this.twitchBot.start(),
+      this.kickBot.start(),
     ]);
 
-    const platforms = ['YouTube', 'TikTok', 'Twitch'];
+    const platforms = ['YouTube', 'TikTok', 'Twitch', 'Kick'];
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         logger.error(`${platforms[index]}: ${result.reason.message}`);
         if (index === 0) this.youtubeBot = null;
         else if (index === 1) this.tiktokBot = null;
-        else this.twitchBot = null;
+        else if (index === 2) this.twitchBot = null;
+        else this.kickBot = null;
       }
     });
 
-    if (!this.youtubeBot && !this.tiktokBot && !this.twitchBot) {
+    if (!this.youtubeBot && !this.tiktokBot && !this.twitchBot && !this.kickBot) {
       logger.error('No se pudo iniciar ningún bot.');
       this.exit(1);
       return;
@@ -383,6 +412,18 @@ Selecciona una opción:
       console.log(`   Uptime: ${Math.round(tw.uptime / 60)} min`);
       console.log('');
     }
+
+    if (this.kickBot) {
+      const kk = this.kickBot.getStats();
+      console.log(chalk.green('🟢 Kick Live:'));
+      console.log(`   Mensajes: ${kk.messagesProcessed}`);
+      console.log(`   Spoilers: ${kk.spoilersDetected}`);
+      console.log(`   Uptime: ${Math.round(kk.uptime / 60)} min`);
+      if (kk.flaggedUsers && Object.keys(kk.flaggedUsers).length > 0) {
+        console.log(`   Usuarios flaggeados: ${Object.keys(kk.flaggedUsers).length}`);
+      }
+      console.log('');
+    }
   }
 
   /**
@@ -392,6 +433,7 @@ Selecciona una opción:
     if (this.youtubeBot) this.youtubeBot.reloadDatabase();
     if (this.tiktokBot) this.tiktokBot.reloadDatabase();
     if (this.twitchBot) this.twitchBot.reloadDatabase();
+    if (this.kickBot) this.kickBot.reloadDatabase();
     console.log(chalk.green('✅ Base de datos recargada en todos los bots activos'));
   }
 
@@ -402,6 +444,7 @@ Selecciona una opción:
     if (this.youtubeBot) this.youtubeBot.stop();
     if (this.tiktokBot) this.tiktokBot.stop();
     if (this.twitchBot) this.twitchBot.stop();
+    if (this.kickBot) this.kickBot.stop();
     this.exit(0);
   }
 

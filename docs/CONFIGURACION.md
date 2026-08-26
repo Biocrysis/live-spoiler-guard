@@ -192,6 +192,54 @@ npm start → opción 4
 
 ---
 
+## Kick Live
+
+### Capacidades
+- Leer chat en tiempo real (WebSocket)
+- Detectar spoilers
+- Notificación de escritorio al streamer
+- Registrar usuarios problemáticos
+- Generar lista de palabras para importar en filtros nativos de Kick
+- **NO puede eliminar mensajes** (limitación de la librería, solo lectura)
+
+### Requisitos
+- Solo el username del streamer en Kick
+- El streamer debe estar en vivo para que el bot se conecte
+
+### Paso 1: Configurar .env
+
+```env
+KICK_USERNAME=tu_username_kick
+```
+
+Solo eso. Sin credenciales. La librería `kick-live-connector` se conecta al live público vía WebSocket.
+
+### Limitaciones
+- No se pueden eliminar mensajes (librería de solo lectura)
+- No se puede banear usuarios vía la librería
+- Solo funciona mientras el streamer está en vivo
+- La librería `kick-live-connector` no es oficial y puede dejar de funcionar si Kick cambia su protocolo
+
+### Nota: API Oficial de Kick
+Kick tiene una [API oficial](https://github.com/KickEngineering/KickDevDocs) con OAuth 2.1 que permitiría moderación completa (eliminar mensajes, banear usuarios). Sin embargo, requiere registro como desarrollador y aprobación. Si en el futuro se obtiene acceso, el bot puede ser actualizado para usar la API oficial y tener las mismas capacidades que YouTube/Twitch.
+
+### Complemento: Filtros nativos de Kick
+
+El bot puede exportar una lista de palabras para importar en los filtros nativos de Kick:
+
+1. Escribir `export` mientras el bot está corriendo
+2. Copiar la lista generada
+3. En Kick: **Configuración del canal** → **Moderación** → **Palabras bloqueadas** → Pegar
+
+### Ejecutar
+```bash
+npm run kick
+# o
+npm start → opción 5
+```
+
+---
+
 ## Configuración Compartida (Todas las plataformas)
 
 Estas opciones aplican a todos los bots:
@@ -251,7 +299,7 @@ SAVE_LOGS=true
 ```bash
 npm run all
 # o
-npm start → opción 5
+npm start → opción 6
 ```
 
 ### Combinaciones desde CLI
@@ -259,6 +307,7 @@ npm start → opción 5
 node src/index.js --youtube    # Solo YouTube
 node src/index.js --tiktok     # Solo TikTok
 node src/index.js --twitch     # Solo Twitch
+node src/index.js --kick       # Solo Kick
 node src/index.js --both       # YouTube + TikTok
 node src/index.js --all        # Todas
 ```
@@ -270,21 +319,21 @@ Mientras el bot está corriendo, escribí en la consola:
 |---------|-------------|
 | `stats` | Ver estadísticas de todos los bots activos |
 | `reload` | Recargar base de datos de spoilers (sin reiniciar) |
-| `export` | Exportar filtros para TikTok |
+| `export` | Exportar filtros para TikTok/Kick |
 | `stop` | Detener todos los bots y salir |
 
 ---
 
 ## Resumen de Capacidades
 
-| Característica | YouTube | TikTok | Twitch |
-|---------------|:---:|:---:|:---:|
-| Leer chat en tiempo real | ✅ | ✅ | ✅ |
-| Detección por reglas | ✅ | ✅ | ✅ |
-| Detección con IA | ✅ | ✅ | ✅ |
-| Eliminar mensajes | ✅ | ❌ | ✅ |
-| Timeout/ban | ✅ | ❌ | ✅ |
-| Mensaje de advertencia | ✅ | ❌ | ✅ |
-| Notificación escritorio | ✅ | ✅ | ✅ |
-| Reconexión automática | ✅ | ✅ | ✅ |
-| Exportar filtros nativos | ❌ | ✅ | ❌ |
+| Característica | YouTube | TikTok | Twitch | Kick |
+|---------------|:---:|:---:|:---:|:---:|
+| Leer chat en tiempo real | ✅ | ✅ | ✅ | ✅ |
+| Detección por reglas | ✅ | ✅ | ✅ | ✅ |
+| Detección con IA | ✅ | ✅ | ✅ | ✅ |
+| Eliminar mensajes | ✅ | ❌ | ✅ | ❌ |
+| Timeout/ban | ✅ | ❌ | ✅ | ❌ |
+| Mensaje de advertencia | ✅ | ❌ | ✅ | ❌ |
+| Notificación escritorio | ✅ | ✅ | ✅ | ✅ |
+| Reconexión automática | ✅ | ✅ | ✅ | ✅ |
+| Exportar filtros nativos | ❌ | ✅ | ❌ | ✅ |
