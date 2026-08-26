@@ -63,6 +63,7 @@ Plataformas disponibles (separar con coma, o "all" para todas):
    * Inicia el orquestador
    */
   async start() {
+    console.clear();
     this.showBanner();
 
     // Verificar argumentos de CLI
@@ -203,6 +204,8 @@ Plataformas disponibles (separar con coma, o "all" para todas):
       rl.question(chalk.cyan('💬 Mensaje: '), (message) => {
         if (message.toLowerCase() === 'salir') {
           rl.close();
+          console.clear();
+          this.showBanner();
           this.showMenu();
           this.start();
           return;
