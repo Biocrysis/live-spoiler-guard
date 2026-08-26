@@ -1,0 +1,151 @@
+{
+  "_metadata": {
+    "version": "1.0.0",
+    "lastUpdated": "2026-08-26",
+    "description": "Base de datos de spoilers por juego. Cada juego tiene palabras clave exactas, frases parciales y patrones regex."
+  },
+  "games": {
+    "gta-vi": {
+      "name": "Grand Theft Auto VI",
+      "active": true,
+      "releaseDate": "2025-10-01",
+      "keywords": [
+        "lucia muere",
+        "jason muere",
+        "final de gta 6",
+        "ending gta vi",
+        "lucia es la villana",
+        "jason traiciona"
+      ],
+      "partialMatch": [
+        "el final es",
+        "al final lucia",
+        "al final jason",
+        "la historia termina",
+        "el boss final es",
+        "el jefe final es",
+        "el villano es",
+        "te spoileo"
+      ],
+      "characters": [
+        "lucia",
+        "jason"
+      ],
+      "contextPhrases": [
+        "muere",
+        "mata",
+        "traiciona",
+        "es el villano",
+        "es la villana",
+        "final secreto",
+        "ending",
+        "se muere",
+        "lo matan",
+        "la matan"
+      ],
+      "safeWords": [
+        "lucia gameplay",
+        "jason gameplay",
+        "trailer",
+        "oficial"
+      ]
+    },
+    "zelda-totk": {
+      "name": "The Legend of Zelda: Tears of the Kingdom",
+      "active": false,
+      "releaseDate": "2023-05-12",
+      "keywords": [
+        "zelda muere",
+        "ganondorf final",
+        "link se sacrifica",
+        "rauru muere"
+      ],
+      "partialMatch": [
+        "el final de zelda",
+        "zelda ending",
+        "la historia termina cuando",
+        "al final link"
+      ],
+      "characters": [
+        "link",
+        "zelda",
+        "ganondorf",
+        "rauru",
+        "mineru",
+        "sonia"
+      ],
+      "contextPhrases": [
+        "muere",
+        "se sacrifica",
+        "es el villano",
+        "final boss",
+        "jefe final",
+        "ending secreto"
+      ],
+      "safeWords": [
+        "gameplay",
+        "tutorial",
+        "guía",
+        "shrine"
+      ]
+    },
+    "template": {
+      "name": "NOMBRE DEL JUEGO (PLANTILLA - NO ACTIVAR)",
+      "active": false,
+      "releaseDate": "YYYY-MM-DD",
+      "keywords": [
+        "frase exacta que es spoiler 1",
+        "frase exacta que es spoiler 2"
+      ],
+      "partialMatch": [
+        "inicio de frase que sugiere spoiler",
+        "al final el personaje"
+      ],
+      "characters": [
+        "personaje1",
+        "personaje2"
+      ],
+      "contextPhrases": [
+        "muere",
+        "traiciona",
+        "es el villano",
+        "final secreto"
+      ],
+      "safeWords": [
+        "gameplay",
+        "trailer",
+        "reseña sin spoilers"
+      ]
+    }
+  },
+  "globalPatterns": {
+    "spoilerIndicators": [
+      "spoiler:",
+      "spoiler alert",
+      "te spoileo",
+      "les cuento el final",
+      "el final es",
+      "alerta spoiler",
+      "no vean esto si no quieren spoiler pero",
+      "perdón por el spoiler"
+    ],
+    "deathPatterns": [
+      "muere al final",
+      "se muere en",
+      "lo matan en",
+      "la matan en",
+      "los matan a todos",
+      "mueren todos"
+    ],
+    "endingPatterns": [
+      "el final verdadero",
+      "el final secreto",
+      "el final bueno",
+      "el final malo",
+      "true ending",
+      "secret ending",
+      "bad ending",
+      "good ending"
+    ]
+  }
+}
