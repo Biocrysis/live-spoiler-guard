@@ -1,19 +1,20 @@
 # 🎮🛡️ Bot Anti-Spoilers para Lives
 
-Bot de moderación de chat que detecta y elimina spoilers de videojuegos en **YouTube Live** y **TikTok Live** en tiempo real.
+Bot de moderación de chat que detecta y elimina spoilers de videojuegos en **YouTube Live**, **TikTok Live**, **Twitch** y **Kick** en tiempo real.
 
 ## ✨ Características
 
-| Característica | YouTube Live | TikTok Live |
-|---------------|:---:|:---:|
-| Leer chat en tiempo real | ✅ | ✅ |
-| Eliminar mensajes automáticamente | ✅ | ❌ (limitación de TikTok) |
-| Timeout/ban a reincidentes | ✅ | ❌ (solo alerta) |
-| Notificaciones de escritorio | ✅ | ✅ |
-| Detección por palabras clave | ✅ | ✅ |
-| Detección por contexto (IA) | ✅ | ✅ |
-| Sistema de strikes | ✅ | ✅ |
-| Reconexión automática | ✅ | ✅ |
+| Característica | YouTube Live | TikTok Live | Twitch | Kick |
+|---------------|:---:|:---:|:---:|:---:|
+| Leer chat en tiempo real | ✅ | ✅ | ✅ | ✅ |
+| Eliminar mensajes automáticamente | ✅ | ❌ (limitación) | ✅ | ❌ (limitación) |
+| Timeout/ban a reincidentes | ✅ | ❌ (solo alerta) | ✅ | ❌ (solo alerta) |
+| Notificaciones de escritorio | ✅ | ✅ | ✅ | ✅ |
+| Detección por palabras clave | ✅ | ✅ | ✅ | ✅ |
+| Detección por contexto (IA) | ✅ | ✅ | ✅ | ✅ |
+| Sistema de strikes | ✅ | ✅ | ✅ | ✅ |
+| Reconexión automática | ✅ | ✅ | ✅ | ✅ |
+| Exportar filtros nativos | ❌ | ✅ | ❌ | ✅ |
 
 ## 📁 Estructura del Proyecto
 
@@ -24,10 +25,14 @@ bot-anti-spoilers/
 ├── data/
 │   ├── spoilers.json       # Base de datos de spoilers por juego
 │   └── README.md           # Documentación de la base de datos
+├── docs/
+│   └── CONFIGURACION.md    # Guía de configuración por plataforma
 ├── src/
 │   ├── bots/
 │   │   ├── youtube-live.js # Bot de YouTube Live
-│   │   └── tiktok-live.js  # Bot de TikTok Live
+│   │   ├── tiktok-live.js  # Bot de TikTok Live
+│   │   ├── twitch-live.js  # Bot de Twitch Live
+│   │   └── kick-live.js    # Bot de Kick Live
 │   ├── detection/
 │   │   ├── spoiler-detector.js  # Motor de detección por reglas
 │   │   └── ai-detector.js       # Detector complementario con IA (opcional)
