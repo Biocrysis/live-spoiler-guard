@@ -54,6 +54,8 @@ bot-anti-spoilers/
 - **Node.js** v18 o superior
 - Cuenta de **Google Cloud** (para YouTube)
 - Cuenta de **TikTok** (para TikTok)
+- Cuenta de **Twitch** (para Twitch)
+- Cuenta de **Kick** (para Kick)
 
 ### Pasos
 
@@ -75,6 +77,17 @@ npm start
 
 ## ⚙️ Configuración
 
+Para la guía completa de configuración de cada plataforma, ver [docs/CONFIGURACION.md](docs/CONFIGURACION.md).
+
+### Resumen rápido
+
+| Plataforma | Configuración necesaria |
+|---|---|
+| YouTube | Client ID + Secret + Refresh Token + Channel ID (OAuth2) |
+| TikTok | Solo username |
+| Twitch | Bot username + OAuth token + canal |
+| Kick | Solo username |
+
 ### YouTube Live (Configuración de Google Cloud)
 
 1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
@@ -82,37 +95,59 @@ npm start
 3. Habilita la **YouTube Data API v3**
 4. Ve a **Credenciales** → **Crear credenciales** → **ID de cliente OAuth 2.0**
 5. Tipo de aplicación: **Aplicación web**
-6. URI de redirección autorizada: `http://localhost:3000/oauth2callback`
+6. URIs de redirección autorizadas:
+   - `http://localhost:3000/oauth2callback`
+   - `https://developers.google.com/oauthplayground`
 7. Copia el `Client ID` y `Client Secret` a tu `.env`
 
 #### Obtener el Refresh Token
 
-Para obtener el refresh token necesitas autorizar la app una vez:
-
 ```bash
-# Puedes usar OAuth2 Playground de Google:
+# Usa OAuth2 Playground de Google:
 # https://developers.google.com/oauthplayground/
 #
-# 1. Configurar con tus credenciales (icono de engranaje)
+# 1. ⚙️ → Marcar "Use your own OAuth credentials" → pegar Client ID y Secret
 # 2. Seleccionar scope: https://www.googleapis.com/auth/youtube.force-ssl
-# 3. Autorizar y obtener el refresh_token
+# 3. Authorize APIs → autorizar con tu cuenta
+# 4. Exchange authorization code for tokens → copiar refresh_token
 ```
 
 #### Encontrar tu Channel ID
 
-- Ve a tu canal de YouTube
-- El ID está en la URL: `youtube.com/channel/UCxxxxxxxxxx`
-- O busca en YouTube Studio → Configuración → Canal → Información básica
+- YouTube Studio → Configuración → Canal → Información básica
+- Formato: `UCxxxxxxxxxxxxxxxxxx`
 
 ### TikTok Live
 
-Solo necesitas el **username** (sin @) del streamer cuyo live quieres monitorear:
+Solo el username (sin @):
 
 ```env
 TIKTOK_USERNAME=tu_username
 ```
 
-> **Nota:** No necesitas credenciales de API. La librería `tiktok-live-connector` se conecta al live público vía WebSocket.
+> No necesitas credenciales de API. Se conecta al live público vía WebSocket.
+
+### Twitch Live
+
+1. Obtener OAuth token en [twitchapps.com/tmi](https://twitchapps.com/tmi/)
+2. La cuenta bot debe ser moderador del canal (`/mod nombre_bot`)
+
+```env
+TWITCH_BOT_USERNAME=tu_bot_username
+TWITCH_OAUTH_TOKEN=oauth:tu_token_aqui
+TWITCH_CHANNEL=tu_canal
+```
+
+### Kick Live
+
+Solo el username:
+
+```env
+KICK_USERNAME=tu_username_kick
+```
+
+> No necesitas credenciales. Se conecta al live público vía WebSocket.
+> **Nota:** Kick tiene una [API oficial](https://github.com/KickEngineering/KickDevDocs) con OAuth 2.1 que permitiría moderación completa, pero requiere aprobación como desarrollador.
 
 ### Detección con IA (Opcional)
 
@@ -133,28 +168,29 @@ OPENAI_API_KEY=sk-tu-api-key
 npm start
 ```
 
-Muestra un menú para seleccionar:
-1. Solo YouTube Live
-2. Solo TikTok Live
-3. Ambos simultáneamente
-4. Modo prueba del detector
-5. Exportar filtros para TikTok
+Muestra un menú donde seleccionas plataformas separadas por coma:
+```
+1) YouTube Live    2) TikTok Live    3) Twitch Live    4) Kick Live
+
+→ Plataformas: 1,3       (YouTube + Twitch)
+→ Plataformas: all       (todas)
+→ Plataformas: 2,4       (TikTok + Kick)
+```
 
 ### Ejecución directa
 
 ```bash
-# Solo YouTube
-npm run youtube
-# o
+npm run youtube     # Solo YouTube
+npm run tiktok      # Solo TikTok
+npm run twitch      # Solo Twitch
+npm run kick        # Solo Kick
+npm run all         # Todas las plataformas
+
+# También con flags:
 node src/index.js --youtube
-
-# Solo TikTok
-npm run tiktok
-# o
-node src/index.js --tiktok
-
-# Ambos
-node src/index.js --both
+node src/index.js --twitch
+node src/index.js --both    # YouTube + TikTok
+node src/index.js --all     # Todas
 ```
 
 ### Comandos durante la ejecución
@@ -165,7 +201,7 @@ Mientras el bot está corriendo, puedes escribir:
 |---------|-------------|
 | `stats` | Ver estadísticas en tiempo real |
 | `reload` | Recargar base de datos de spoilers (sin reiniciar) |
-| `export` | Exportar lista de filtros para TikTok |
+| `export` | Exportar lista de filtros para TikTok/Kick |
 | `stop` | Detener los bots y salir |
 
 ### Probar el detector
@@ -282,16 +318,26 @@ Los logs se guardan en `./logs/` con formato `YYYY-MM-DD.log`:
 - **No se pueden eliminar mensajes** vía API (limitación de la plataforma)
 - El bot solo puede alertar al streamer con notificaciones
 - Usa los **filtros nativos de TikTok** como complemento (comando `export`)
-- La librería `tiktok-live-connector` no es oficial y puede dejar de funcionar si TikTok cambia su protocolo
+- La librería `tiktok-live-connector` no es oficial y puede dejar de funcionar
 
 ### YouTube
 - Requiere autenticación OAuth2 (setup inicial más complejo)
 - Rate limits de la API pueden causar delay de 2-5 segundos
 - El timeout requiere el channelId del usuario (limitación de la API)
 
+### Twitch
+- La cuenta bot debe ser moderador del canal para eliminar mensajes
+- OAuth token debe renovarse si expira
+
+### Kick
+- **No se pueden eliminar mensajes** (librería de solo lectura)
+- El bot solo puede alertar al streamer con notificaciones
+- La librería `kick-live-connector` no es oficial
+- API oficial de Kick (OAuth 2.1) requiere aprobación como desarrollador
+
 ### General
 - La detección por reglas depende de que la base de datos esté actualizada
-- La detección con IA tiene un costo por mensaje (OpenAI API)
+- La detección con IA tiene un costo por mensaje (OpenAI API, ~$0.00007/consulta)
 - Usuarios pueden evadir con errores tipográficos creativos
 
 ## 🤝 Contribuir
@@ -301,6 +347,10 @@ Los logs se guardan en `./logs/` con formato `YYYY-MM-DD.log`:
 3. Reporta falsos positivos/negativos
 4. Sugiere nuevas funcionalidades
 
-## 📄 Licencia
+## � Autor
+
+**Ing. Uriel Rodriguez A.**
+
+## �📄 Licencia
 
 MIT
