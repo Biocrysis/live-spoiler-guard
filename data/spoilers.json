@@ -89,6 +89,106 @@
         "shrine"
       ]
     },
+    "gears-eday": {
+      "name": "Gears of War: E-Day",
+      "active": true,
+      "releaseDate": "2026-10-06",
+      "keywords": [
+        "marcus muere",
+        "dom muere en eday",
+        "mags muere",
+        "lucas muere",
+        "final de gears eday",
+        "ending gears e-day",
+        "marcus traiciona"
+      ],
+      "partialMatch": [
+        "el final de gears",
+        "al final marcus",
+        "al final dom",
+        "la historia de eday termina",
+        "el boss final de gears",
+        "el final de e-day"
+      ],
+      "characters": [
+        "marcus",
+        "dom",
+        "dominic",
+        "mags",
+        "lucas reyes",
+        "fenix"
+      ],
+      "contextPhrases": [
+        "muere",
+        "mata",
+        "traiciona",
+        "se sacrifica",
+        "lo matan",
+        "la matan",
+        "final secreto",
+        "ending",
+        "sobrevive",
+        "no sobrevive"
+      ],
+      "safeWords": [
+        "gameplay",
+        "trailer",
+        "beta",
+        "multijugador",
+        "horde mode",
+        "oficial",
+        "gamescom"
+      ]
+    },
+    "gears-of-war-4": {
+      "name": "Gears of War 4",
+      "active": true,
+      "releaseDate": "2016-10-11",
+      "keywords": [
+        "reyna muere",
+        "kait es nieta de myrrah",
+        "kait desciende de la reina locust",
+        "reyna es hija de myrrah",
+        "del muere en gears 5",
+        "jd muere en gears 5"
+      ],
+      "partialMatch": [
+        "el final de gears 4",
+        "al final kait",
+        "al final jd",
+        "la madre de kait",
+        "el collar de kait",
+        "reyna se convierte"
+      ],
+      "characters": [
+        "jd",
+        "del",
+        "kait",
+        "reyna",
+        "oscar",
+        "myrrah"
+      ],
+      "contextPhrases": [
+        "muere",
+        "mata",
+        "traiciona",
+        "se sacrifica",
+        "se convierte",
+        "es la reina",
+        "es descendiente",
+        "capturan",
+        "lo matan",
+        "la matan"
+      ],
+      "safeWords": [
+        "gameplay",
+        "trailer",
+        "multijugador",
+        "horde mode",
+        "versus",
+        "speedrun"
+      ]
+    },
     "template": {
       "name": "NOMBRE DEL JUEGO (PLANTILLA - NO ACTIVAR)",
       "active": false,
