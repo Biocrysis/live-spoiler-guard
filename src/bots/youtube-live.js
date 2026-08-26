@@ -173,14 +173,14 @@ class YouTubeLiveBot {
       // Programar siguiente poll
       const interval = Math.max(
         pollingIntervalMillis || config.youtube.pollInterval,
-        2000 // Mínimo 2 segundos para no exceder rate limits
+        5000 // Mínimo 5 segundos para evitar rate limits
       );
 
       this.pollingTimer = setTimeout(() => this.pollChat(), interval);
     } catch (error) {
       if (error.code === 403) {
-        logger.error('Rate limit alcanzado. Esperando 10 segundos...');
-        this.pollingTimer = setTimeout(() => this.pollChat(), 10000);
+        logger.error('Rate limit alcanzado. Esperando 30 segundos...');
+        this.pollingTimer = setTimeout(() => this.pollChat(), 30000);
       } else if (error.code === 404) {
         logger.error('Live chat no encontrado. El stream puede haber terminado.');
         this.stop();

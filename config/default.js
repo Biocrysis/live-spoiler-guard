@@ -19,6 +19,15 @@ const config = {
     username: process.env.TIKTOK_USERNAME || '',
   },
 
+  // Twitch settings
+  twitch: {
+    botUsername: process.env.TWITCH_BOT_USERNAME || '',
+    oauthToken: process.env.TWITCH_OAUTH_TOKEN || '',
+    channel: process.env.TWITCH_CHANNEL || '',
+    spoilerAction: process.env.TWITCH_SPOILER_ACTION || 'delete', // delete | warn
+    timeoutSeconds: parseInt(process.env.TWITCH_TIMEOUT_SECONDS || '300', 10),
+  },
+
   // Bot behavior
   bot: {
     sendWarningMessage: process.env.SEND_WARNING_MESSAGE === 'true',
@@ -64,6 +73,12 @@ export function validateConfig(platform = 'both') {
 
   if (platform === 'tiktok' || platform === 'both') {
     if (!config.tiktok.username) errors.push('TIKTOK_USERNAME es requerido');
+  }
+
+  if (platform === 'twitch' || platform === 'all') {
+    if (!config.twitch.botUsername) errors.push('TWITCH_BOT_USERNAME es requerido');
+    if (!config.twitch.oauthToken) errors.push('TWITCH_OAUTH_TOKEN es requerido');
+    if (!config.twitch.channel) errors.push('TWITCH_CHANNEL es requerido');
   }
 
   if (config.detection.useAI && !config.detection.openaiKey) {

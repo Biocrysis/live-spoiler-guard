@@ -3,6 +3,7 @@ import { createInterface } from 'readline';
 import config, { validateConfig } from '../config/default.js';
 import YouTubeLiveBot from './bots/youtube-live.js';
 import TikTokLiveBot from './bots/tiktok-live.js';
+import TwitchLiveBot from './bots/twitch-live.js';
 import logger from './utils/logger.js';
 
 /**
@@ -14,6 +15,7 @@ class AntiSpoilerOrchestrator {
   constructor() {
     this.youtubeBot = null;
     this.tiktokBot = null;
+    this.twitchBot = null;
     this.rl = null;
     this.platform = null;
   }
@@ -43,9 +45,11 @@ Selecciona una opción:
 
   ${chalk.red('1)')} YouTube Live     - Moderación completa (eliminar + timeout)
   ${chalk.magenta('2)')} TikTok Live      - Monitoreo + alertas (solo lectura)
-  ${chalk.yellow('3)')} Ambas            - Ejecutar YouTube + TikTok simultáneamente
-  ${chalk.green('4)')} Test detector    - Probar el detector con un mensaje
-  ${chalk.blue('5)')} Exportar filtros - Generar lista para filtros nativos de TikTok
+  ${chalk.yellow('3)')} Ambas (YT+TT)    - Ejecutar YouTube + TikTok simultáneamente
+  ${chalk.hex('#9146FF')('4)')} Twitch Live      - Moderación completa (eliminar + timeout)
+  ${chalk.cyan('5)')} Todas            - Ejecutar todas las plataformas
+  ${chalk.green('6)')} Test detector    - Probar el detector con un mensaje
+  ${chalk.blue('7)')} Exportar filtros - Generar lista para filtros nativos de TikTok
   ${chalk.gray('0)')} Salir
     `));
   }
@@ -62,8 +66,12 @@ Selecciona una opción:
       return this.startYouTube();
     } else if (args.includes('--tiktok')) {
       return this.startTikTok();
+    } else if (args.includes('--twitch')) {
+      return this.startTwitch();
     } else if (args.includes('--both')) {
       return this.startBoth();
+    } else if (args.includes('--all')) {
+      return this.startAll();
     }
 
     // Menú interactivo
@@ -85,9 +93,15 @@ Selecciona una opción:
           await this.startBoth();
           break;
         case '4':
-          await this.testDetector();
+          await this.startTwitch();
           break;
         case '5':
+          await this.startAll();
+          break;
+        case '6':
+          await this.testDetector();
+          break;
+        case '7':
           this.exportFilters();
           break;
         case '0':
@@ -142,7 +156,7 @@ Selecciona una opción:
    */
   async startBoth() {
     validateConfig('both');
-    console.log(chalk.yellow('\n🔄 Iniciando ambos bots...\n'));
+    console.log(chalk.yellow('\n🔄 Iniciando YouTube + TikTok...\n'));
 
     this.youtubeBot = new YouTubeLiveBot();
     this.tiktokBot = new TikTokLiveBot();
@@ -162,6 +176,59 @@ Selecciona una opción:
     });
 
     if (!this.youtubeBot && !this.tiktokBot) {
+      logger.error('No se pudo iniciar ningún bot.');
+      this.exit(1);
+      return;
+    }
+
+    this.startCommandListener();
+  }
+
+  /**
+   * Inicia solo el bot de Twitch
+   */
+  async startTwitch() {
+    validateConfig('twitch');
+    console.log(chalk.hex('#9146FF')('\n🟣 Iniciando Twitch Live Bot...\n'));
+
+    this.twitchBot = new TwitchLiveBot();
+
+    try {
+      await this.twitchBot.start();
+      this.startCommandListener();
+    } catch (error) {
+      logger.error(`No se pudo iniciar Twitch bot: ${error.message}`);
+      this.exit(1);
+    }
+  }
+
+  /**
+   * Inicia todas las plataformas simultáneamente
+   */
+  async startAll() {
+    console.log(chalk.cyan('\n🌐 Iniciando todas las plataformas...\n'));
+
+    this.youtubeBot = new YouTubeLiveBot();
+    this.tiktokBot = new TikTokLiveBot();
+    this.twitchBot = new TwitchLiveBot();
+
+    const results = await Promise.allSettled([
+      this.youtubeBot.start(),
+      this.tiktokBot.start(),
+      this.twitchBot.start(),
+    ]);
+
+    const platforms = ['YouTube', 'TikTok', 'Twitch'];
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        logger.error(`${platforms[index]}: ${result.reason.message}`);
+        if (index === 0) this.youtubeBot = null;
+        else if (index === 1) this.tiktokBot = null;
+        else this.twitchBot = null;
+      }
+    });
+
+    if (!this.youtubeBot && !this.tiktokBot && !this.twitchBot) {
       logger.error('No se pudo iniciar ningún bot.');
       this.exit(1);
       return;
@@ -306,6 +373,16 @@ Selecciona una opción:
       }
       console.log('');
     }
+
+    if (this.twitchBot) {
+      const tw = this.twitchBot.getStats();
+      console.log(chalk.hex('#9146FF')('🟣 Twitch Live:'));
+      console.log(`   Mensajes: ${tw.messagesProcessed}`);
+      console.log(`   Spoilers: ${tw.spoilersDetected}`);
+      console.log(`   Eliminados: ${tw.messagesDeleted}`);
+      console.log(`   Uptime: ${Math.round(tw.uptime / 60)} min`);
+      console.log('');
+    }
   }
 
   /**
@@ -314,6 +391,7 @@ Selecciona una opción:
   reloadAll() {
     if (this.youtubeBot) this.youtubeBot.reloadDatabase();
     if (this.tiktokBot) this.tiktokBot.reloadDatabase();
+    if (this.twitchBot) this.twitchBot.reloadDatabase();
     console.log(chalk.green('✅ Base de datos recargada en todos los bots activos'));
   }
 
@@ -323,6 +401,7 @@ Selecciona una opción:
   stopAll() {
     if (this.youtubeBot) this.youtubeBot.stop();
     if (this.tiktokBot) this.tiktokBot.stop();
+    if (this.twitchBot) this.twitchBot.stop();
     this.exit(0);
   }
 
