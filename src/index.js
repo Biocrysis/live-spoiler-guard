@@ -43,17 +43,19 @@ class AntiSpoilerOrchestrator {
    */
   showMenu() {
     console.log(chalk.white(`
-Selecciona una opción:
+Plataformas disponibles (separar con coma, o "all" para todas):
 
   ${chalk.red('1)')} YouTube Live     - Moderación completa (eliminar + timeout)
   ${chalk.magenta('2)')} TikTok Live      - Monitoreo + alertas (solo lectura)
-  ${chalk.yellow('3)')} Ambas (YT+TT)    - Ejecutar YouTube + TikTok simultáneamente
-  ${chalk.hex('#9146FF')('4)')} Twitch Live      - Moderación completa (eliminar + timeout)
-  ${chalk.green('5)')} Kick Live        - Monitoreo + alertas (solo lectura)
-  ${chalk.cyan('6)')} Todas            - Ejecutar todas las plataformas
-  ${chalk.white('7)')} Test detector    - Probar el detector con un mensaje
-  ${chalk.blue('8)')} Exportar filtros - Generar lista para filtros nativos
+  ${chalk.hex('#9146FF')('3)')} Twitch Live      - Moderación completa (eliminar + timeout)
+  ${chalk.green('4)')} Kick Live        - Monitoreo + alertas (solo lectura)
+
+  Herramientas:
+  ${chalk.white('t)')} Test detector    - Probar el detector con un mensaje
+  ${chalk.blue('e)')} Exportar filtros - Generar lista para filtros nativos
   ${chalk.gray('0)')} Salir
+
+  Ejemplos: ${chalk.gray('1,3')} (YouTube + Twitch) | ${chalk.gray('all')} (todas) | ${chalk.gray('2,4')} (TikTok + Kick)
     `));
   }
 
@@ -66,17 +68,17 @@ Selecciona una opción:
     // Verificar argumentos de CLI
     const args = process.argv.slice(2);
     if (args.includes('--youtube')) {
-      return this.startYouTube();
+      return this.startSelected(['youtube']);
     } else if (args.includes('--tiktok')) {
-      return this.startTikTok();
+      return this.startSelected(['tiktok']);
     } else if (args.includes('--twitch')) {
-      return this.startTwitch();
+      return this.startSelected(['twitch']);
     } else if (args.includes('--kick')) {
-      return this.startKick();
+      return this.startSelected(['kick']);
     } else if (args.includes('--both')) {
-      return this.startBoth();
+      return this.startSelected(['youtube', 'tiktok']);
     } else if (args.includes('--all')) {
-      return this.startAll();
+      return this.startSelected(['youtube', 'tiktok', 'twitch', 'kick']);
     }
 
     // Menú interactivo
@@ -86,178 +88,94 @@ Selecciona una opción:
       output: process.stdout,
     });
 
-    this.rl.question(chalk.cyan('\n→ Opción: '), async (answer) => {
-      switch (answer.trim()) {
-        case '1':
-          await this.startYouTube();
-          break;
-        case '2':
-          await this.startTikTok();
-          break;
-        case '3':
-          await this.startBoth();
-          break;
-        case '4':
-          await this.startTwitch();
-          break;
-        case '5':
-          await this.startKick();
-          break;
-        case '6':
-          await this.startAll();
-          break;
-        case '7':
-          await this.testDetector();
-          break;
-        case '8':
-          this.exportFilters();
-          break;
-        case '0':
-          this.exit();
-          break;
-        default:
-          console.log(chalk.red('Opción no válida'));
-          this.showMenu();
-          break;
+    this.rl.question(chalk.cyan('\n→ Plataformas: '), async (answer) => {
+      const input = answer.trim().toLowerCase();
+
+      if (input === '0') {
+        this.exit();
+        return;
       }
+
+      if (input === 't') {
+        await this.testDetector();
+        return;
+      }
+
+      if (input === 'e') {
+        this.exportFilters();
+        return;
+      }
+
+      if (input === 'all') {
+        await this.startSelected(['youtube', 'tiktok', 'twitch', 'kick']);
+        return;
+      }
+
+      // Parsear selección por comas
+      const platformMap = { '1': 'youtube', '2': 'tiktok', '3': 'twitch', '4': 'kick' };
+      const selections = input.split(',').map((s) => s.trim());
+      const platforms = selections
+        .map((s) => platformMap[s])
+        .filter(Boolean);
+
+      if (platforms.length === 0) {
+        console.log(chalk.red('Opción no válida. Usa números separados por coma (ej: 1,3) o "all"'));
+        this.showMenu();
+        this.start();
+        return;
+      }
+
+      await this.startSelected(platforms);
     });
   }
 
   /**
-   * Inicia solo el bot de YouTube
+   * Inicia las plataformas seleccionadas simultáneamente
+   * @param {string[]} platforms - Array con las plataformas a iniciar
    */
-  async startYouTube() {
-    validateConfig('youtube');
-    console.log(chalk.red('\n▶ Iniciando YouTube Live Bot...\n'));
+  async startSelected(platforms) {
+    const platformNames = platforms.map((p) => p.charAt(0).toUpperCase() + p.slice(1));
+    console.log(chalk.cyan(`\n🌐 Iniciando: ${platformNames.join(' + ')}...\n`));
 
-    this.youtubeBot = new YouTubeLiveBot();
+    const starters = [];
+    const labels = [];
 
-    try {
-      await this.youtubeBot.start();
-      this.startCommandListener();
-    } catch (error) {
-      logger.error(`No se pudo iniciar YouTube bot: ${error.message}`);
-      this.exit(1);
+    if (platforms.includes('youtube')) {
+      this.youtubeBot = new YouTubeLiveBot();
+      starters.push(this.youtubeBot.start());
+      labels.push('YouTube');
     }
-  }
-
-  /**
-   * Inicia solo el bot de TikTok
-   */
-  async startTikTok() {
-    validateConfig('tiktok');
-    console.log(chalk.magenta('\n♪ Iniciando TikTok Live Bot...\n'));
-
-    this.tiktokBot = new TikTokLiveBot();
-
-    try {
-      await this.tiktokBot.start();
-      this.startCommandListener();
-    } catch (error) {
-      logger.error(`No se pudo iniciar TikTok bot: ${error.message}`);
-      this.exit(1);
+    if (platforms.includes('tiktok')) {
+      this.tiktokBot = new TikTokLiveBot();
+      starters.push(this.tiktokBot.start());
+      labels.push('TikTok');
     }
-  }
+    if (platforms.includes('twitch')) {
+      this.twitchBot = new TwitchLiveBot();
+      starters.push(this.twitchBot.start());
+      labels.push('Twitch');
+    }
+    if (platforms.includes('kick')) {
+      this.kickBot = new KickLiveBot();
+      starters.push(this.kickBot.start());
+      labels.push('Kick');
+    }
 
-  /**
-   * Inicia ambos bots simultáneamente
-   */
-  async startBoth() {
-    validateConfig('both');
-    console.log(chalk.yellow('\n🔄 Iniciando YouTube + TikTok...\n'));
-
-    this.youtubeBot = new YouTubeLiveBot();
-    this.tiktokBot = new TikTokLiveBot();
-
-    const results = await Promise.allSettled([
-      this.youtubeBot.start(),
-      this.tiktokBot.start(),
-    ]);
+    const results = await Promise.allSettled(starters);
 
     results.forEach((result, index) => {
-      const platform = index === 0 ? 'YouTube' : 'TikTok';
       if (result.status === 'rejected') {
-        logger.error(`${platform}: ${result.reason.message}`);
-        if (index === 0) this.youtubeBot = null;
-        else this.tiktokBot = null;
+        logger.error(`${labels[index]}: ${result.reason.message}`);
+        const platform = platforms[index];
+        if (platform === 'youtube') this.youtubeBot = null;
+        else if (platform === 'tiktok') this.tiktokBot = null;
+        else if (platform === 'twitch') this.twitchBot = null;
+        else if (platform === 'kick') this.kickBot = null;
       }
     });
 
-    if (!this.youtubeBot && !this.tiktokBot) {
-      logger.error('No se pudo iniciar ningún bot.');
-      this.exit(1);
-      return;
-    }
-
-    this.startCommandListener();
-  }
-
-  /**
-   * Inicia solo el bot de Twitch
-   */
-  async startTwitch() {
-    validateConfig('twitch');
-    console.log(chalk.hex('#9146FF')('\n🟣 Iniciando Twitch Live Bot...\n'));
-
-    this.twitchBot = new TwitchLiveBot();
-
-    try {
-      await this.twitchBot.start();
-      this.startCommandListener();
-    } catch (error) {
-      logger.error(`No se pudo iniciar Twitch bot: ${error.message}`);
-      this.exit(1);
-    }
-  }
-
-  /**
-   * Inicia solo el bot de Kick
-   */
-  async startKick() {
-    validateConfig('kick');
-    console.log(chalk.green('\n🟢 Iniciando Kick Live Bot...\n'));
-
-    this.kickBot = new KickLiveBot();
-
-    try {
-      await this.kickBot.start();
-      this.startCommandListener();
-    } catch (error) {
-      logger.error(`No se pudo iniciar Kick bot: ${error.message}`);
-      this.exit(1);
-    }
-  }
-
-  /**
-   * Inicia todas las plataformas simultáneamente
-   */
-  async startAll() {
-    console.log(chalk.cyan('\n🌐 Iniciando todas las plataformas...\n'));
-
-    this.youtubeBot = new YouTubeLiveBot();
-    this.tiktokBot = new TikTokLiveBot();
-    this.twitchBot = new TwitchLiveBot();
-    this.kickBot = new KickLiveBot();
-
-    const results = await Promise.allSettled([
-      this.youtubeBot.start(),
-      this.tiktokBot.start(),
-      this.twitchBot.start(),
-      this.kickBot.start(),
-    ]);
-
-    const platforms = ['YouTube', 'TikTok', 'Twitch', 'Kick'];
-    results.forEach((result, index) => {
-      if (result.status === 'rejected') {
-        logger.error(`${platforms[index]}: ${result.reason.message}`);
-        if (index === 0) this.youtubeBot = null;
-        else if (index === 1) this.tiktokBot = null;
-        else if (index === 2) this.twitchBot = null;
-        else this.kickBot = null;
-      }
-    });
-
-    if (!this.youtubeBot && !this.tiktokBot && !this.twitchBot && !this.kickBot) {
+    const anyActive = this.youtubeBot || this.tiktokBot || this.twitchBot || this.kickBot;
+    if (!anyActive) {
       logger.error('No se pudo iniciar ningún bot.');
       this.exit(1);
       return;
