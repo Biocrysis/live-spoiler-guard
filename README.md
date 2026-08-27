@@ -347,10 +347,14 @@ Los logs se guardan en `./logs/` con formato `YYYY-MM-DD.log`:
 3. Reporta falsos positivos/negativos
 4. Sugiere nuevas funcionalidades
 
-## � Autor
+## 👤 Autor
 
 **Ing. Uriel Rodriguez A.**
 
-## �📄 Licencia
+## 🚀 Deploy
+
+Para desplegar el bot en un servidor 24/7, ver [docs/DEPLOY.md](docs/DEPLOY.md) (guía para Fly.io).
+
+## 📄 Licencia
 
 MIT

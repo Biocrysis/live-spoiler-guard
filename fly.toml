@@ -1,0 +1,22 @@
+# Configuración de Fly.io para Bot Anti-Spoilers
+# Documentación: https://fly.io/docs/reference/configuration/
+
+app = "bot-anti-spoilers"
+primary_region = "mia"  # Miami - baja latencia para LATAM
+
+[build]
+  dockerfile = "Dockerfile"
+
+# El bot no es un servidor web, no necesita HTTP services
+# Desactivar health checks HTTP
+[processes]
+  app = "node src/index.js --all"
+
+# Recursos mínimos (free tier)
+[[vm]]
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# No exponer puertos (no es servidor web)
+# No definir [http_service] ni [[services]]

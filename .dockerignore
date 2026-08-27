@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+*.env
+logs/
+*.log
+.git/
+.gitignore
+.DS_Store
+tokens.json
+oauth2-credentials.json
+client_secret*.json
+README.md
+ROADMAP.md
+docs/
+.kiro/

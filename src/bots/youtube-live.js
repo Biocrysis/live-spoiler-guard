@@ -179,15 +179,15 @@ class YouTubeLiveBot {
       this.pollingTimer = setTimeout(() => this.pollChat(), interval);
     } catch (error) {
       if (error.code === 403) {
-        logger.error('Rate limit alcanzado. Esperando 30 segundos...');
-        this.pollingTimer = setTimeout(() => this.pollChat(), 30000);
+        logger.error('Rate limit alcanzado. Esperando 15 segundos...');
+        this.pollingTimer = setTimeout(() => this.pollChat(), 1500);
       } else if (error.code === 404) {
         logger.error('Live chat no encontrado. El stream puede haber terminado.');
         this.stop();
       } else {
         logger.error(`Error en polling: ${error.message}`);
-        // Reintentar después de 5 segundos
-        this.pollingTimer = setTimeout(() => this.pollChat(), 5000);
+        // Reintentar después de 3 segundos
+        this.pollingTimer = setTimeout(() => this.pollChat(), 3000);
       }
     }
   }
