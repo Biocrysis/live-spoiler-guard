@@ -17,6 +17,7 @@ const config = {
   // TikTok settings
   tiktok: {
     username: process.env.TIKTOK_USERNAME || '',
+    signApiKey: process.env.TIKTOK_SIGN_API_KEY || '',
   },
 
   // Twitch settings

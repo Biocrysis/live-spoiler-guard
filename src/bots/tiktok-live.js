@@ -49,9 +49,10 @@ class TikTokLiveBot {
     logger.platform('tiktok', `Conectando al live de @${username}...`);
 
     this.connection = new TikTokLiveConnection(username, {
-      processInitialData: false,
+      processInitialData: true,
       enableExtendedGiftInfo: false,
       fetchRoomInfoOnConnect: true,
+      signApiKey: config.tiktok.signApiKey || undefined,
     });
 
     return this.connection;
@@ -64,6 +65,9 @@ class TikTokLiveBot {
     try {
       await this.connect();
 
+      // Registrar event listeners ANTES de conectar el WebSocket
+      this.registerEventListeners();
+
       const state = await this.connection.connect();
       this.isRunning = true;
       this.stats.startTime = new Date();
@@ -71,9 +75,6 @@ class TikTokLiveBot {
       logger.platform('tiktok', `🔴 Conectado al live de @${config.tiktok.username} (roomId: ${state.roomId})`);
       logger.platform('tiktok', '🤖 Bot Anti-Spoilers ACTIVO - Monitoreando chat...');
       notifier.botStarted('TikTok');
-
-      // Registrar event listeners
-      this.registerEventListeners();
     } catch (error) {
       if (error.message?.includes('LIVE has ended') || error.message?.includes('offline') || error.name === 'UserOfflineError') {
         logger.error(`El live de @${config.tiktok.username} no está activo.`);
@@ -92,9 +93,36 @@ class TikTokLiveBot {
    * Registra los event listeners para el chat
    */
   registerEventListeners() {
-    // Mensajes del chat
+    // Conexión WebSocket confirmada
+    this.connection.on(ControlEvent.CONNECTED, (state) => {
+      logger.platform('tiktok', `✅ WebSocket conectado (roomId: ${state.roomId})`);
+    });
+
+    // Capturar mensajes de chat desde decoded data (método más confiable en v2)
+    this.connection.on(ControlEvent.DECODED_DATA, (event, data) => {
+      if (event === 'WebcastChatMessage' && data) {
+        this.processMessage(data);
+      }
+    });
+
+    // Escuchar también por el evento directo (por si funciona en algunos streams)
     this.connection.on(WebcastEvent.CHAT, (data) => {
-      this.processMessage(data);
+      // Evitar duplicados - solo procesar si no vino por DECODED_DATA
+      if (data && !data._processed) {
+        this.processMessage(data);
+      }
+    });
+
+    // Log de conexión WebSocket
+    this.connection.on(ControlEvent.CONNECTED, (state) => {
+      logger.platform('tiktok', `✅ WebSocket conectado (roomId: ${state.roomId})`);
+    });
+
+    // Log raw data para debug (solo cuenta, no imprime todo)
+    this.connection.on(ControlEvent.DECODED_DATA, (event) => {
+      if (this.stats.messagesProcessed === 0 && event === 'chat') {
+        logger.platform('tiktok', '📨 Primer evento de chat recibido');
+      }
     });
 
     // Desconexión
@@ -128,7 +156,7 @@ class TikTokLiveBot {
    * @param {object} data - Datos del mensaje de TikTok (v2 API)
    */
   async processMessage(data) {
-    const text = data.comment || '';
+    const text = data.comment || data.content || '';
     const username = data.user?.uniqueId || data.user?.nickname || 'Unknown';
     const userId = data.user?.userId || '';
 
