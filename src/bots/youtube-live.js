@@ -162,6 +162,7 @@ class YouTubeLiveBot {
       const { items, nextPageToken, pollingIntervalMillis } = response.data;
 
       this.nextPageToken = nextPageToken;
+      this.consecutiveRateLimits = 0; // Reset al tener un poll exitoso
 
       // Procesar mensajes
       if (items && items.length > 0) {
@@ -173,21 +174,57 @@ class YouTubeLiveBot {
       // Programar siguiente poll
       const interval = Math.max(
         pollingIntervalMillis || config.youtube.pollInterval,
-        5000 // Mínimo 5 segundos para evitar rate limits
+        4000 // Mínimo 4 segundos - backoff progresivo maneja rate limits
       );
 
       this.pollingTimer = setTimeout(() => this.pollChat(), interval);
     } catch (error) {
       if (error.code === 403) {
-        logger.error('Rate limit alcanzado. Esperando 15 segundos...');
-        this.pollingTimer = setTimeout(() => this.pollChat(), 1500);
+        // Incrementar contador de rate limits consecutivos
+        this.consecutiveRateLimits = (this.consecutiveRateLimits || 0) + 1;
+
+        // Si llevamos más de 10 rate limits seguidos, probablemente el stream terminó
+        if (this.consecutiveRateLimits >= 10) {
+          logger.error('Rate limit persistente (10+ intentos). El stream puede haber terminado.');
+          logger.platform('youtube', '🔍 Verificando si el stream sigue activo...');
+
+          try {
+            // Verificar si el stream sigue activo
+            const response = await this.youtube.liveBroadcasts.list({
+              part: ['status'],
+              broadcastStatus: 'active',
+            });
+
+            if (!response.data.items || response.data.items.length === 0) {
+              logger.platform('youtube', '📴 El stream ha terminado. Deteniendo bot...');
+              this.stop();
+              return;
+            }
+
+            // Stream activo pero rate limited - esperar más tiempo
+            logger.platform('youtube', '⏳ Stream activo pero rate limited. Esperando 60 segundos...');
+            this.consecutiveRateLimits = 0;
+            this.pollingTimer = setTimeout(() => this.pollChat(), 60000);
+          } catch (checkError) {
+            // Si la verificación también falla por rate limit, no asumir que terminó
+            // Esperar 2 minutos y volver a intentar
+            logger.platform('youtube', '⏳ No se pudo verificar estado del stream (posible rate limit). Esperando 2 minutos...');
+            this.consecutiveRateLimits = 0;
+            this.pollingTimer = setTimeout(() => this.pollChat(), 120000);
+          }
+        } else {
+          // Backoff progresivo: 15s, 20s, 25s, 30s...
+          const waitTime = 15000 + (this.consecutiveRateLimits * 5000);
+          logger.error(`Rate limit alcanzado (${this.consecutiveRateLimits}/10). Esperando ${waitTime / 1000} segundos...`);
+          this.pollingTimer = setTimeout(() => this.pollChat(), waitTime);
+        }
       } else if (error.code === 404) {
         logger.error('Live chat no encontrado. El stream puede haber terminado.');
         this.stop();
       } else {
         logger.error(`Error en polling: ${error.message}`);
-        // Reintentar después de 3 segundos
-        this.pollingTimer = setTimeout(() => this.pollChat(), 3000);
+        // Reintentar después de 5 segundos
+        this.pollingTimer = setTimeout(() => this.pollChat(), 5000);
       }
     }
   }

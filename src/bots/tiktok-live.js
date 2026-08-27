@@ -1,4 +1,4 @@
-import { WebcastPushConnection } from 'tiktok-live-connector';
+import { TikTokLiveConnection, WebcastEvent, ControlEvent } from 'tiktok-live-connector';
 import config from '../../config/default.js';
 import SpoilerDetector from '../detection/spoiler-detector.js';
 import AIDetector from '../detection/ai-detector.js';
@@ -48,12 +48,10 @@ class TikTokLiveBot {
 
     logger.platform('tiktok', `Conectando al live de @${username}...`);
 
-    this.connection = new WebcastPushConnection(username, {
+    this.connection = new TikTokLiveConnection(username, {
       processInitialData: false,
       enableExtendedGiftInfo: false,
-      enableWebsocketUpgrade: true,
-      requestPollingIntervalMs: 2000,
-      sessionId: null,
+      fetchRoomInfoOnConnect: true,
     });
 
     return this.connection;
@@ -70,16 +68,14 @@ class TikTokLiveBot {
       this.isRunning = true;
       this.stats.startTime = new Date();
 
-      logger.platform('tiktok', `🔴 Conectado al live de @${config.tiktok.username}`);
-      logger.platform('tiktok', `👥 Viewers: ${state.roomInfo?.user_count || 'N/A'}`);
-      logger.platform('tiktok', `📺 Título: ${state.roomInfo?.title || 'N/A'}`);
+      logger.platform('tiktok', `🔴 Conectado al live de @${config.tiktok.username} (roomId: ${state.roomId})`);
       logger.platform('tiktok', '🤖 Bot Anti-Spoilers ACTIVO - Monitoreando chat...');
       notifier.botStarted('TikTok');
 
       // Registrar event listeners
       this.registerEventListeners();
     } catch (error) {
-      if (error.message?.includes('LIVE has ended')) {
+      if (error.message?.includes('LIVE has ended') || error.message?.includes('offline') || error.name === 'UserOfflineError') {
         logger.error(`El live de @${config.tiktok.username} no está activo.`);
         logger.platform('tiktok', '💡 Asegúrate de que el usuario esté en vivo.');
       } else if (error.message?.includes('not found')) {
@@ -97,17 +93,12 @@ class TikTokLiveBot {
    */
   registerEventListeners() {
     // Mensajes del chat
-    this.connection.on('chat', (data) => {
-      this.processMessage(data);
-    });
-
-    // Comentarios (algunos lives usan esto en vez de chat)
-    this.connection.on('comment', (data) => {
+    this.connection.on(WebcastEvent.CHAT, (data) => {
       this.processMessage(data);
     });
 
     // Desconexión
-    this.connection.on('disconnected', () => {
+    this.connection.on(ControlEvent.DISCONNECTED, () => {
       logger.platform('tiktok', '⚠️ Desconectado del live');
       if (this.isRunning) {
         logger.platform('tiktok', '🔄 Intentando reconectar en 5 segundos...');
@@ -116,30 +107,30 @@ class TikTokLiveBot {
     });
 
     // Errores
-    this.connection.on('error', (err) => {
-      logger.error(`TikTok WebSocket error: ${err.message}`);
+    this.connection.on(ControlEvent.ERROR, (err) => {
+      logger.error(`TikTok WebSocket error: ${err.exception?.message || err.info || err}`);
     });
 
     // Stream terminado
-    this.connection.on('streamEnd', (actionId) => {
-      logger.platform('tiktok', `📴 El stream ha terminado (action: ${actionId})`);
+    this.connection.on(WebcastEvent.STREAM_END, () => {
+      logger.platform('tiktok', '📴 El stream ha terminado');
       this.stop();
     });
 
-    // Info de viewers (opcional, para estadísticas)
-    this.connection.on('roomUser', (data) => {
+    // Info de viewers
+    this.connection.on(WebcastEvent.ROOM_USER, (data) => {
       logger.debug(`TikTok viewers: ${data.viewerCount}`);
     });
   }
 
   /**
    * Procesa un mensaje del chat
-   * @param {object} data - Datos del mensaje de TikTok
+   * @param {object} data - Datos del mensaje de TikTok (v2 API)
    */
   async processMessage(data) {
-    const text = data.comment || data.message || '';
-    const username = data.nickname || data.uniqueId || 'Unknown';
-    const userId = data.userId || data.uniqueId || '';
+    const text = data.comment || '';
+    const username = data.user?.uniqueId || data.user?.nickname || 'Unknown';
+    const userId = data.user?.userId || '';
 
     // Ignorar mensajes vacíos o muy cortos
     if (text.length < 5) return;
@@ -220,7 +211,7 @@ class TikTokLiveBot {
       await this.connection.connect();
       logger.platform('tiktok', '✅ Reconectado exitosamente');
     } catch (error) {
-      if (error.message?.includes('LIVE has ended')) {
+      if (error.message?.includes('LIVE has ended') || error.name === 'UserOfflineError') {
         logger.platform('tiktok', '📴 El live ha terminado.');
         this.stop();
       } else {
