@@ -1,20 +1,21 @@
 # 🎮🛡️ Bot Anti-Spoilers para Lives
 
-Bot de moderación de chat que detecta y elimina spoilers de videojuegos en **YouTube Live**, **TikTok Live**, **Twitch** y **Kick** en tiempo real.
+Bot de moderación de chat que detecta y elimina spoilers de videojuegos en **YouTube Live**, **TikTok Live**, **Twitch**, **Kick** y **Facebook Live** en tiempo real.
 
 ## ✨ Características
 
-| Característica | YouTube Live | TikTok Live | Twitch | Kick |
-|---------------|:---:|:---:|:---:|:---:|
-| Leer chat en tiempo real | ✅ | ✅ | ✅ | ✅ |
-| Eliminar mensajes automáticamente | ✅ | ❌ (limitación) | ✅ | ❌ (limitación) |
-| Timeout/ban a reincidentes | ✅ | ❌ (solo alerta) | ✅ | ❌ (solo alerta) |
-| Notificaciones de escritorio | ✅ | ✅ | ✅ | ✅ |
-| Detección por palabras clave | ✅ | ✅ | ✅ | ✅ |
-| Detección por contexto (IA) | ✅ | ✅ | ✅ | ✅ |
-| Sistema de strikes | ✅ | ✅ | ✅ | ✅ |
-| Reconexión automática | ✅ | ✅ | ✅ | ✅ |
-| Exportar filtros nativos | ❌ | ✅ | ❌ | ✅ |
+| Característica | YouTube | TikTok | Twitch | Kick | Facebook |
+|---------------|:---:|:---:|:---:|:---:|:---:|
+| Leer chat en tiempo real | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Eliminar mensajes automáticamente | ✅ | ❌ (limitación) | ✅ | ❌ (limitación) | ✅ |
+| Ocultar mensajes | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Timeout/ban a reincidentes | ✅ | ❌ (solo alerta) | ✅ | ❌ (solo alerta) | ❌ |
+| Notificaciones de escritorio | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Detección por palabras clave | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Detección por contexto (IA) | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Sistema de strikes | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Reconexión automática | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Exportar filtros nativos | ❌ | ✅ | ❌ | ✅ | ❌ |
 
 ## 📁 Estructura del Proyecto
 
@@ -29,10 +30,11 @@ bot-anti-spoilers/
 │   └── CONFIGURACION.md    # Guía de configuración por plataforma
 ├── src/
 │   ├── bots/
-│   │   ├── youtube-live.js # Bot de YouTube Live
-│   │   ├── tiktok-live.js  # Bot de TikTok Live
-│   │   ├── twitch-live.js  # Bot de Twitch Live
-│   │   └── kick-live.js    # Bot de Kick Live
+│   │   ├── youtube-live.js  # Bot de YouTube Live
+│   │   ├── tiktok-live.js   # Bot de TikTok Live
+│   │   ├── twitch-live.js   # Bot de Twitch Live
+│   │   ├── kick-live.js     # Bot de Kick Live
+│   │   └── facebook-live.js # Bot de Facebook Live
 │   ├── detection/
 │   │   ├── spoiler-detector.js  # Motor de detección por reglas
 │   │   └── ai-detector.js       # Detector complementario con IA (opcional)
@@ -56,6 +58,7 @@ bot-anti-spoilers/
 - Cuenta de **TikTok** (para TikTok)
 - Cuenta de **Twitch** (para Twitch)
 - Cuenta de **Kick** (para Kick)
+- App de **Meta for Developers** + Página (para Facebook)
 
 ### Pasos
 
@@ -87,6 +90,7 @@ Para la guía completa de configuración de cada plataforma, ver [docs/CONFIGURA
 | TikTok | Solo username |
 | Twitch | Bot username + OAuth token + canal |
 | Kick | Solo username |
+| Facebook | Page ID + Page Access Token (Meta app + permisos) |
 
 ### YouTube Live (Configuración de Google Cloud)
 
@@ -149,6 +153,21 @@ KICK_USERNAME=tu_username_kick
 > No necesitas credenciales. Se conecta al live público vía WebSocket.
 > **Nota:** Kick tiene una [API oficial](https://github.com/KickEngineering/KickDevDocs) con OAuth 2.1 que permitiría moderación completa, pero requiere aprobación como desarrollador.
 
+### Facebook Live
+
+1. Crear una App en [Meta for Developers](https://developers.facebook.com/)
+2. Los lives deben ser en una **Página** (no perfil personal)
+3. Obtener el **Page Access Token** con permisos `pages_read_engagement`, `pages_manage_engagement`, `pages_read_user_content`
+
+```env
+FACEBOOK_PAGE_ID=tu_page_id
+FACEBOOK_PAGE_ACCESS_TOKEN=tu_page_access_token
+FACEBOOK_SPOILER_ACTION=hide
+```
+
+> `FACEBOOK_SPOILER_ACTION` puede ser `hide` (oculta, reversible) o `delete` (elimina permanente).
+> Para producción con usuarios externos, Meta requiere revisión de la app. Ver [docs/CONFIGURACION.md](docs/CONFIGURACION.md) para el detalle.
+
 ### Detección con IA (Opcional)
 
 Si quieres usar detección contextual con OpenAI:
@@ -170,11 +189,11 @@ npm start
 
 Muestra un menú donde seleccionas plataformas separadas por coma:
 ```
-1) YouTube Live    2) TikTok Live    3) Twitch Live    4) Kick Live
+1) YouTube  2) TikTok  3) Twitch  4) Kick  5) Facebook
 
 → Plataformas: 1,3       (YouTube + Twitch)
 → Plataformas: all       (todas)
-→ Plataformas: 2,4       (TikTok + Kick)
+→ Plataformas: 2,5       (TikTok + Facebook)
 ```
 
 ### Ejecución directa
@@ -184,11 +203,12 @@ npm run youtube     # Solo YouTube
 npm run tiktok      # Solo TikTok
 npm run twitch      # Solo Twitch
 npm run kick        # Solo Kick
+npm run facebook    # Solo Facebook
 npm run all         # Todas las plataformas
 
 # También con flags:
 node src/index.js --youtube
-node src/index.js --twitch
+node src/index.js --facebook
 node src/index.js --both    # YouTube + TikTok
 node src/index.js --all     # Todas
 ```
@@ -334,6 +354,12 @@ Los logs se guardan en `./logs/` con formato `YYYY-MM-DD.log`:
 - El bot solo puede alertar al streamer con notificaciones
 - La librería `kick-live-connector` no es oficial
 - API oficial de Kick (OAuth 2.1) requiere aprobación como desarrollador
+
+### Facebook
+- Los lives deben ser en una **Página**, no en un perfil personal
+- El Page Access Token expira (usar token de larga duración o System User)
+- Para producción con usuarios externos, Meta requiere revisión de la app (App Review)
+- No hay timeout/ban vía API en lives (solo eliminar u ocultar comentarios)
 
 ### General
 - La detección por reglas depende de que la base de datos esté actualizada

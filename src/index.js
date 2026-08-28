@@ -5,6 +5,7 @@ import YouTubeLiveBot from './bots/youtube-live.js';
 import TikTokLiveBot from './bots/tiktok-live.js';
 import TwitchLiveBot from './bots/twitch-live.js';
 import KickLiveBot from './bots/kick-live.js';
+import FacebookLiveBot from './bots/facebook-live.js';
 import logger from './utils/logger.js';
 
 /**
@@ -18,6 +19,7 @@ class AntiSpoilerOrchestrator {
     this.tiktokBot = null;
     this.twitchBot = null;
     this.kickBot = null;
+    this.facebookBot = null;
     this.rl = null;
     this.platform = null;
   }
@@ -32,7 +34,7 @@ class AntiSpoilerOrchestrator {
 ║   🎮  BOT ANTI-SPOILERS  🛡️                     ║
 ║   Moderación de chat para Lives                  ║
 ║                                                  ║
-║   Plataformas: YouTube Live + TikTok Live        ║
+║   YT · TikTok · Twitch · Kick · Facebook         ║
 ║                                                  ║
 ╚══════════════════════════════════════════════════╝
     `));
@@ -49,13 +51,14 @@ Plataformas disponibles (separar con coma, o "all" para todas):
   ${chalk.magenta('2)')} TikTok Live      - Monitoreo + alertas (solo lectura)
   ${chalk.hex('#9146FF')('3)')} Twitch Live      - Moderación completa (eliminar + timeout)
   ${chalk.green('4)')} Kick Live        - Monitoreo + alertas (solo lectura)
+  ${chalk.blue('5)')} Facebook Live    - Moderación completa (eliminar/ocultar)
 
   Herramientas:
   ${chalk.white('t)')} Test detector    - Probar el detector con un mensaje
   ${chalk.blue('e)')} Exportar filtros - Generar lista para filtros nativos
   ${chalk.gray('0)')} Salir
 
-  Ejemplos: ${chalk.gray('1,3')} (YouTube + Twitch) | ${chalk.gray('all')} (todas) | ${chalk.gray('2,4')} (TikTok + Kick)
+  Ejemplos: ${chalk.gray('1,3')} (YouTube + Twitch) | ${chalk.gray('all')} (todas) | ${chalk.gray('2,5')} (TikTok + Facebook)
     `));
   }
 
@@ -76,10 +79,12 @@ Plataformas disponibles (separar con coma, o "all" para todas):
       return this.startSelected(['twitch']);
     } else if (args.includes('--kick')) {
       return this.startSelected(['kick']);
+    } else if (args.includes('--facebook')) {
+      return this.startSelected(['facebook']);
     } else if (args.includes('--both')) {
       return this.startSelected(['youtube', 'tiktok']);
     } else if (args.includes('--all')) {
-      return this.startSelected(['youtube', 'tiktok', 'twitch', 'kick']);
+      return this.startSelected(['youtube', 'tiktok', 'twitch', 'kick', 'facebook']);
     }
 
     // Menú interactivo
@@ -108,12 +113,12 @@ Plataformas disponibles (separar con coma, o "all" para todas):
       }
 
       if (input === 'all') {
-        await this.startSelected(['youtube', 'tiktok', 'twitch', 'kick']);
+        await this.startSelected(['youtube', 'tiktok', 'twitch', 'kick', 'facebook']);
         return;
       }
 
       // Parsear selección por comas
-      const platformMap = { '1': 'youtube', '2': 'tiktok', '3': 'twitch', '4': 'kick' };
+      const platformMap = { '1': 'youtube', '2': 'tiktok', '3': 'twitch', '4': 'kick', '5': 'facebook' };
       const selections = input.split(',').map((s) => s.trim());
       const platforms = selections
         .map((s) => platformMap[s])
@@ -161,21 +166,27 @@ Plataformas disponibles (separar con coma, o "all" para todas):
       starters.push(this.kickBot.start());
       labels.push('Kick');
     }
+    if (platforms.includes('facebook')) {
+      this.facebookBot = new FacebookLiveBot();
+      starters.push(this.facebookBot.start());
+      labels.push('Facebook');
+    }
 
     const results = await Promise.allSettled(starters);
 
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
         logger.error(`${labels[index]}: ${result.reason.message}`);
-        const platform = platforms[index];
+        const platform = labels[index].toLowerCase();
         if (platform === 'youtube') this.youtubeBot = null;
         else if (platform === 'tiktok') this.tiktokBot = null;
         else if (platform === 'twitch') this.twitchBot = null;
         else if (platform === 'kick') this.kickBot = null;
+        else if (platform === 'facebook') this.facebookBot = null;
       }
     });
 
-    const anyActive = this.youtubeBot || this.tiktokBot || this.twitchBot || this.kickBot;
+    const anyActive = this.youtubeBot || this.tiktokBot || this.twitchBot || this.kickBot || this.facebookBot;
     if (!anyActive) {
       logger.error('No se pudo iniciar ningún bot.');
       this.exit(1);
@@ -345,6 +356,16 @@ Plataformas disponibles (separar con coma, o "all" para todas):
       }
       console.log('');
     }
+
+    if (this.facebookBot) {
+      const fb = this.facebookBot.getStats();
+      console.log(chalk.blue('🔵 Facebook Live:'));
+      console.log(`   Comentarios: ${fb.messagesProcessed}`);
+      console.log(`   Spoilers: ${fb.spoilersDetected}`);
+      console.log(`   Eliminados: ${fb.messagesDeleted}`);
+      console.log(`   Uptime: ${Math.round(fb.uptime / 60)} min`);
+      console.log('');
+    }
   }
 
   /**
@@ -355,6 +376,7 @@ Plataformas disponibles (separar con coma, o "all" para todas):
     if (this.tiktokBot) this.tiktokBot.reloadDatabase();
     if (this.twitchBot) this.twitchBot.reloadDatabase();
     if (this.kickBot) this.kickBot.reloadDatabase();
+    if (this.facebookBot) this.facebookBot.reloadDatabase();
     console.log(chalk.green('✅ Base de datos recargada en todos los bots activos'));
   }
 
@@ -366,6 +388,7 @@ Plataformas disponibles (separar con coma, o "all" para todas):
     if (this.tiktokBot) this.tiktokBot.stop();
     if (this.twitchBot) this.twitchBot.stop();
     if (this.kickBot) this.kickBot.stop();
+    if (this.facebookBot) this.facebookBot.stop();
     this.exit(0);
   }
 

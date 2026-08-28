@@ -10,6 +10,7 @@
     "tiktok": "node src/index.js --tiktok",
     "twitch": "node src/index.js --twitch",
     "kick": "node src/index.js --kick",
+    "facebook": "node src/index.js --facebook",
     "all": "node src/index.js --all",
     "dev": "node --watch src/index.js",
     "add-game": "node src/utils/add-game.js",

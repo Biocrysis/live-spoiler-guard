@@ -235,6 +235,82 @@ El bot puede exportar una lista de palabras para importar en los filtros nativos
 ```bash
 npm run kick
 # o
+npm start → opción 4
+```
+
+> En el menú interactivo puedes seleccionar varias plataformas separadas por coma (ej: `1,4`) o escribir `all` para todas.
+
+---
+
+## Facebook Live
+
+### Capacidades
+- Leer comentarios del live en tiempo real (polling vía Graph API)
+- Eliminar u ocultar comentarios automáticamente
+- Enviar advertencias
+- Detección por reglas + IA
+- Sistema de strikes
+
+### Requisitos
+- Una **App** en Meta for Developers
+- Una **Página de Facebook** (los lives deben ser en una Page, no en perfil personal)
+- **Page Access Token** con permisos de moderación
+- Para producción, Meta debe aprobar los permisos (proceso de revisión)
+
+### Paso 1: Crear App en Meta for Developers
+
+1. Ir a [developers.facebook.com](https://developers.facebook.com/)
+2. **Mis Apps** → **Crear App**
+3. Tipo de app: **Empresa** (Business)
+4. Agregar el producto **Facebook Login** o **Graph API**
+
+### Paso 2: Obtener el Page ID
+
+1. Ir a tu Página de Facebook
+2. **Configuración** → **Información de la página** → **ID de la página**
+3. O usar el [Graph API Explorer](https://developers.facebook.com/tools/explorer/) con la query `/me/accounts`
+
+### Paso 3: Obtener el Page Access Token
+
+1. Ir a [Graph API Explorer](https://developers.facebook.com/tools/explorer/)
+2. Seleccionar tu app
+3. En **Permisos**, agregar:
+   - `pages_read_engagement` (leer comentarios)
+   - `pages_manage_engagement` (ocultar/eliminar comentarios)
+   - `pages_read_user_content`
+4. Generar el token de usuario
+5. Intercambiar por un **Page Access Token** (query `/me/accounts` devuelve tokens por página)
+6. Recomendado: convertir a **token de larga duración** (dura ~60 días) o usar un System User token para producción
+
+### Paso 4: Configurar .env
+
+```env
+FACEBOOK_PAGE_ID=tu_page_id
+FACEBOOK_PAGE_ACCESS_TOKEN=tu_page_access_token
+FACEBOOK_SPOILER_ACTION=hide
+FACEBOOK_POLL_INTERVAL=5000
+```
+
+### Campos explicados
+- `FACEBOOK_PAGE_ID` — ID numérico de tu página
+- `FACEBOOK_PAGE_ACCESS_TOKEN` — Token de acceso de la página con permisos de moderación
+- `FACEBOOK_SPOILER_ACTION` — `hide` (oculta, reversible) o `delete` (elimina permanentemente)
+- `FACEBOOK_POLL_INTERVAL` — Milisegundos entre consultas de comentarios (default 5000)
+
+### Limitaciones
+- Los lives deben ser en una **Página**, no en un perfil personal
+- El Page Access Token expira (usar token de larga duración o System User)
+- Para uso en producción con usuarios externos, Meta requiere revisión de la app (App Review)
+- En modo desarrollo funciona solo con tu propia página y cuentas de prueba
+
+### Nota sobre `hide` vs `delete`
+- `hide` — Oculta el comentario para los demás pero el autor lo sigue viendo (menos conflictivo, reversible)
+- `delete` — Elimina el comentario permanentemente
+
+### Ejecutar
+```bash
+npm run facebook
+# o
 npm start → opción 5
 ```
 
@@ -299,7 +375,7 @@ SAVE_LOGS=true
 ```bash
 npm run all
 # o
-npm start → opción 6
+npm start → escribir "all"
 ```
 
 ### Combinaciones desde CLI
@@ -308,6 +384,7 @@ node src/index.js --youtube    # Solo YouTube
 node src/index.js --tiktok     # Solo TikTok
 node src/index.js --twitch     # Solo Twitch
 node src/index.js --kick       # Solo Kick
+node src/index.js --facebook   # Solo Facebook
 node src/index.js --both       # YouTube + TikTok
 node src/index.js --all        # Todas
 ```
@@ -326,14 +403,15 @@ Mientras el bot está corriendo, escribí en la consola:
 
 ## Resumen de Capacidades
 
-| Característica | YouTube | TikTok | Twitch | Kick |
-|---------------|:---:|:---:|:---:|:---:|
-| Leer chat en tiempo real | ✅ | ✅ | ✅ | ✅ |
-| Detección por reglas | ✅ | ✅ | ✅ | ✅ |
-| Detección con IA | ✅ | ✅ | ✅ | ✅ |
-| Eliminar mensajes | ✅ | ❌ | ✅ | ❌ |
-| Timeout/ban | ✅ | ❌ | ✅ | ❌ |
-| Mensaje de advertencia | ✅ | ❌ | ✅ | ❌ |
-| Notificación escritorio | ✅ | ✅ | ✅ | ✅ |
-| Reconexión automática | ✅ | ✅ | ✅ | ✅ |
-| Exportar filtros nativos | ❌ | ✅ | ❌ | ✅ |
+| Característica | YouTube | TikTok | Twitch | Kick | Facebook |
+|---------------|:---:|:---:|:---:|:---:|:---:|
+| Leer chat en tiempo real | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Detección por reglas | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Detección con IA | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Eliminar mensajes | ✅ | ❌ | ✅ | ❌ | ✅ |
+| Ocultar mensajes | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Timeout/ban | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Mensaje de advertencia | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Notificación escritorio | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Reconexión automática | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Exportar filtros nativos | ❌ | ✅ | ❌ | ✅ | ❌ |

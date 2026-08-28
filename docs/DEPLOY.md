@@ -82,6 +82,12 @@ fly secrets set TWITCH_TIMEOUT_SECONDS=300
 # Kick
 fly secrets set KICK_USERNAME=tu_username_kick
 
+# Facebook
+fly secrets set FACEBOOK_PAGE_ID=tu_page_id
+fly secrets set FACEBOOK_PAGE_ACCESS_TOKEN=tu_page_access_token
+fly secrets set FACEBOOK_SPOILER_ACTION=hide
+fly secrets set FACEBOOK_POLL_INTERVAL=5000
+
 # Bot behavior
 fly secrets set SEND_WARNING_MESSAGE=true
 fly secrets set WARNING_MESSAGE="⚠️ Mensaje eliminado por posible spoiler."
@@ -185,8 +191,11 @@ Por defecto el `fly.toml` usa `--all` (todas las plataformas). Si solo querés a
 [processes]
   app = "node src/index.js --youtube"         # Solo YouTube
   app = "node src/index.js --twitch"          # Solo Twitch
+  app = "node src/index.js --facebook"        # Solo Facebook
   app = "node src/index.js --all"             # Todas (default)
 ```
+
+Flags disponibles: `--youtube`, `--tiktok`, `--twitch`, `--kick`, `--facebook`, `--both` (YT+TT), `--all`.
 
 O usá flags combinados pasando el CLI arg en el Dockerfile.
 

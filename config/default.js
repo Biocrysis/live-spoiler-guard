@@ -34,6 +34,15 @@ const config = {
     username: process.env.KICK_USERNAME || '',
   },
 
+  // Facebook settings
+  facebook: {
+    pageId: process.env.FACEBOOK_PAGE_ID || '',
+    pageAccessToken: process.env.FACEBOOK_PAGE_ACCESS_TOKEN || '',
+    spoilerAction: process.env.FACEBOOK_SPOILER_ACTION || 'hide', // delete | hide
+    // Intervalo de polling de comentarios en ms (Facebook usa polling)
+    pollInterval: parseInt(process.env.FACEBOOK_POLL_INTERVAL || '5000', 10),
+  },
+
   // Bot behavior
   bot: {
     sendWarningMessage: process.env.SEND_WARNING_MESSAGE === 'true',
@@ -89,6 +98,11 @@ export function validateConfig(platform = 'both') {
 
   if (platform === 'kick' || platform === 'all') {
     if (!config.kick.username) errors.push('KICK_USERNAME es requerido');
+  }
+
+  if (platform === 'facebook' || platform === 'all') {
+    if (!config.facebook.pageId) errors.push('FACEBOOK_PAGE_ID es requerido');
+    if (!config.facebook.pageAccessToken) errors.push('FACEBOOK_PAGE_ACCESS_TOKEN es requerido');
   }
 
   if (config.detection.useAI && !config.detection.openaiKey) {
