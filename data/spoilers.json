@@ -100,7 +100,14 @@
         "lucas muere",
         "final de gears eday",
         "ending gears e-day",
-        "marcus traiciona"
+        "marcus traiciona",
+        "spoiler de gears eday",
+        "spoiler de gears e-day",
+        "spoiler gears of war eday",
+        "en gears eday pasa",
+        "en e-day pasa",
+        "te cuento el final de gears",
+        "ya me vi el final de gears"
       ],
       "partialMatch": [
         "el final de gears",
@@ -108,7 +115,16 @@
         "al final dom",
         "la historia de eday termina",
         "el boss final de gears",
-        "el final de e-day"
+        "el final de e-day",
+        "en gears eday",
+        "en gears e-day",
+        "en e-day",
+        "spoiler de gears",
+        "les cuento que en gears",
+        "ya termine gears eday",
+        "ya me pase gears",
+        "el final verdadero de gears",
+        "el ending de gears"
       ],
       "characters": [
         "marcus",
@@ -116,7 +132,8 @@
         "dominic",
         "mags",
         "lucas reyes",
-        "fenix"
+        "fenix",
+        "bravo squad"
       ],
       "contextPhrases": [
         "muere",
@@ -128,7 +145,12 @@
         "final secreto",
         "ending",
         "sobrevive",
-        "no sobrevive"
+        "no sobrevive",
+        "es el villano",
+        "es el traidor",
+        "el jefe final",
+        "el boss final",
+        "se convierte"
       ],
       "safeWords": [
         "gameplay",
@@ -137,7 +159,11 @@
         "multijugador",
         "horde mode",
         "oficial",
-        "gamescom"
+        "gamescom",
+        "review sin spoilers",
+        "reseña sin spoilers",
+        "preventa",
+        "pre order"
       ]
     },
     "gears-of-war-4": {

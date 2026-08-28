@@ -236,6 +236,7 @@ class YouTubeLiveBot {
   async processMessage(message) {
     const text = message.snippet?.displayMessage || message.snippet?.textMessageDetails?.messageText || '';
     const username = message.authorDetails?.displayName || 'Unknown';
+    const channelId = message.authorDetails?.channelId || '';
     const messageId = message.id;
     const isModerator = message.authorDetails?.isChatModerator || false;
     const isOwner = message.authorDetails?.isChatOwner || false;
@@ -265,7 +266,7 @@ class YouTubeLiveBot {
     }
 
     if (result.isSpoiler) {
-      await this.handleSpoiler(result, messageId, username);
+      await this.handleSpoiler(result, messageId, username, channelId);
     } else {
       logger.safe(text, username);
     }
@@ -276,8 +277,9 @@ class YouTubeLiveBot {
    * @param {object} result - Resultado de detección
    * @param {string} messageId - ID del mensaje en YouTube
    * @param {string} username - Nombre del usuario
+   * @param {string} channelId - Channel ID del autor (necesario para timeout/ban)
    */
-  async handleSpoiler(result, messageId, username) {
+  async handleSpoiler(result, messageId, username, channelId = '') {
     this.stats.spoilersDetected++;
     logger.spoiler(result);
     notifier.spoilerDetected(result, 'youtube');
@@ -305,8 +307,7 @@ class YouTubeLiveBot {
 
       // Timeout si tiene muchos strikes
       if (strikes >= 3 && config.youtube.timeoutSeconds > 0) {
-        await this.timeoutUser(username);
-        logger.platform('youtube', `⏰ Timeout aplicado a ${username} (${strikes} strikes)`);
+        await this.timeoutUser(username, channelId);
       }
     } catch (error) {
       logger.error(`Error manejando spoiler: ${error.message}`);
@@ -349,14 +350,35 @@ class YouTubeLiveBot {
   }
 
   /**
-   * Aplica timeout (ban temporal) a un usuario
-   * @param {string} username - No se puede hacer por username directamente en YouTube API
-   * Se necesita el channelId del usuario
+   * Aplica timeout (ban temporal) a un usuario mediante la API de YouTube.
+   * Usa liveChatBans.insert con tipo "temporary" y duración en segundos.
+   * @param {string} username - Nombre del usuario (para logs)
+   * @param {string} channelId - Channel ID del usuario (requerido por la API)
    */
-  async timeoutUser(username) {
-    // NOTA: YouTube API requiere el channelId del usuario para banearlo
-    // En un stream real, el moderador puede hacerlo manualmente
-    logger.platform('youtube', `⚠️ Usuario ${username} debería recibir timeout (requiere ban manual o channelId)`);
+  async timeoutUser(username, channelId) {
+    if (!channelId) {
+      logger.platform('youtube', `⚠️ No se pudo aplicar timeout a ${username}: falta channelId`);
+      return;
+    }
+
+    try {
+      await this.youtube.liveChatBans.insert({
+        part: ['snippet'],
+        requestBody: {
+          snippet: {
+            liveChatId: this.liveChatId,
+            type: 'temporary',
+            banDurationSeconds: config.youtube.timeoutSeconds,
+            bannedUserDetails: {
+              channelId: channelId,
+            },
+          },
+        },
+      });
+      logger.platform('youtube', `⏰ Timeout de ${config.youtube.timeoutSeconds}s aplicado a ${username}`);
+    } catch (error) {
+      logger.error(`Error aplicando timeout a ${username}: ${error.message}`);
+    }
   }
 
   /**
